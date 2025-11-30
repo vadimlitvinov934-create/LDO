@@ -3,3 +3,4 @@ SQLAlchemy==2.0.36
 aiogram
 python-dotenv
 qrcode[pil]
+gunicorn
