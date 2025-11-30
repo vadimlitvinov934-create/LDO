@@ -27,24 +27,24 @@ def now_minutes(dt: datetime | None = None) -> int:
 # ПОНЕДЕЛЬНИК — с классным часом
 MONDAY = [
     {"code": "kh", "title": "Кл. час", "start": "07:45", "end": "08:05"},
-    {"code": "p1", "title": "Пара 1", "start": "08:10", "end": "09:30"},
-    {"code": "p2", "title": "Пара 2", "start": "09:40", "end": "11:00"},
-    {"code": "p3", "title": "Пара 3", "start": "11:40", "end": "13:00"},
-    {"code": "p4", "title": "Пара 4", "start": "13:15", "end": "14:35"},
-    {"code": "p5", "title": "Пара 5", "start": "14:45", "end": "16:05"},
-    {"code": "p6", "title": "Пара 6", "start": "16:15", "end": "17:35"},
-    {"code": "p7", "title": "Пара 7", "start": "17:40", "end": "19:00"},
+    {"code": "p1", "title": "Пара 1", "start": "08:10", "end": "09:40"},
+    {"code": "p2", "title": "Пара 2", "start": "09:50", "end": "11:20"},
+    {"code": "p3", "title": "Пара 3", "start": "11:40", "end": "13:10"},
+    {"code": "p4", "title": "Пара 4", "start": "13:15", "end": "14:45"},
+    {"code": "p5", "title": "Пара 5", "start": "15:05", "end": "16:35"},
+    {"code": "p6", "title": "Пара 6", "start": "16:40", "end": "18:10"},
+    {"code": "p7", "title": "Пара 7", "start": "18:15", "end": "19:45"},
 ]
 
 # ВТ–ПТ
 TUE_FRI = [
-    {"code": "p1", "title": "Пара 1", "start": "07:45", "end": "09:05"},
-    {"code": "p2", "title": "Пара 2", "start": "09:15", "end": "10:35"},
-    {"code": "p3", "title": "Пара 3", "start": "11:15", "end": "12:35"},
-    {"code": "p4", "title": "Пара 4", "start": "12:50", "end": "14:10"},
-    {"code": "p5", "title": "Пара 5", "start": "14:20", "end": "15:40"},
-    {"code": "p6", "title": "Пара 6", "start": "15:45", "end": "17:05"},
-    {"code": "p7", "title": "Пара 7", "start": "17:10", "end": "18:30"},
+    {"code": "p1", "title": "Пара 1", "start": "07:45", "end": "09:15"},
+    {"code": "p2", "title": "Пара 2", "start": "09:25", "end": "10:55"},
+    {"code": "p3", "title": "Пара 3", "start": "11:15", "end": "12:45"},
+    {"code": "p4", "title": "Пара 4", "start": "12:50", "end": "14:20"},
+    {"code": "p5", "title": "Пара 5", "start": "14:40", "end": "16:10"},
+    {"code": "p6", "title": "Пара 6", "start": "16:15", "end": "17:45"},
+    {"code": "p7", "title": "Пара 7", "start": "17:50", "end": "19:20"},
 ]
 
 SATURDAY: list[dict] = []
