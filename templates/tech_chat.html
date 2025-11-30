@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% block title %}Чат с поддержкой{% endblock %}
+
+{% block content %}
+<style>
+  /* --- ОБЩИЕ ПЕРЕМЕННЫЕ И НАСТРОЙКИ --- */
+  :root {
+    --color-primary: #4f46e5;      /* Индиго */
+    --color-primary-dark: #4338ca;
+    --color-incoming-bg: #e5e7eb;  /* Светло-серый */
+    --color-incoming-text: #1f2937;
+    --color-outgoing-bg: var(--color-primary); /* Синий */
+    --color-outgoing-text: #ffffff;
+    --color-border: #e5e7eb;
+    --radius-soft: 18px;           /* Мягкое скругление */
+    --radius-small: 8px;           /* Маленькое скругление для углов */
+  }
+  
+  /* --- ОСНОВНОЙ КОНТЕЙНЕР --- */
+  .chat-container {
+    display: flex;
+    height: calc(100vh - 100px);
+    background: var(--white);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  /* --- ЛЕВАЯ КОЛОНКА (СПИСОК) --- */
+  .chat-sidebar {
+    width: 320px;
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    background: #f9fafb;
+  }
+
+  .chat-sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+    font-weight: 700;
+    font-size: 16px;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--color-primary);
+  }
+
+  .user-list {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .user-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: var(--color-incoming-text);
+    border-bottom: 1px solid #f3f4f6;
+    transition: 0.2s;
+    justify-content: space-between;
+  }
+  .user-item:hover { background: #f0f3f6; }
+  .user-item.active { background: #eef2ff; border-left: 4px solid var(--color-primary); }
+  
+  .u-name { font-weight: 600; font-size: 14px; display: block; }
+  .u-role { font-size: 12px; color: var(--text-secondary); }
+
+  /* --- ПРАВАЯ КОЛОНКА (ЧАТ) --- */
+  .chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+  }
+
+  .chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+    font-weight: 700;
+    font-size: 15px;
+    background: var(--white);
+    color: var(--color-primary);
+  }
+
+  .messages-area {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fdfdfd;
+  }
+
+  /* --- ПУЗЫРИ СООБЩЕНИЙ --- */
+  .msg {
+    max-width: 70%;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.4;
+    position: relative;
+    
+    /* Общие скругления */
+    border-radius: var(--radius-soft); 
+  }
+  
+  .msg-in {
+    align-self: flex-start;
+    background: var(--color-incoming-bg);
+    color: var(--color-incoming-text);
+    /* Разные скругления для "ушка" */
+    border-top-left-radius: var(--radius-small);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+  }
+  
+  .msg-out {
+    align-self: flex-end;
+    background: var(--color-outgoing-bg);
+    color: var(--color-outgoing-text);
+    /* Разные скругления для "ушка" */
+    border-top-right-radius: var(--radius-small);
+  }
+
+  .msg-time {
+    font-size: 10px;
+    opacity: 0.7;
+    margin-top: 4px;
+    text-align: right;
+    display: block;
+    color: inherit; /* Время наследует цвет родителя (белый/серый) */
+  }
+
+  /* --- ПОЛЕ ВВОДА --- */
+  .chat-input-area {
+    padding: 16px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    gap: 10px;
+    background: var(--white);
+  }
+  
+  .chat-input {
+    flex: 1;
+    padding: 12px 14px;
+    border: 2px solid #f3f4f6; /* Мягкая граница */
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.3s;
+  }
+  .chat-input:focus { border-color: #a5b4fc; box-shadow: 0 0 0 1px #a5b4fc; }
+
+  .chat-send-btn {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .chat-send-btn:hover { background: var(--color-primary-dark); }
+
+  /* --- АДАПТИВНОСТЬ --- */
+  @media (max-width: 768px) {
+    .chat-container { height: calc(100vh - 80px); flex-direction: column; }
+    
+    /* Скрываем список контактов, если чат открыт (mobile-hidden класс добавляется Jinja) */
+    .chat-sidebar { width: 100%; height: 100%; position: absolute; z-index: 10; }
+    
+    /* Основное окно занимает все место, если оно видимо */
+    .chat-main { width: 100%; height: 100%; }
+    
+    .mobile-hidden { display: none !important; }
+
+    /* Кнопка "Назад" - показывается только на мобильном, когда чат активен */
+    .back-btn { 
+      display: inline-block !important; 
+      margin-right: 15px; 
+      color: var(--color-primary); 
+      text-decoration: none; 
+      font-weight: 500;
+      font-size: 14px;
+    }
+  }
+</style>
+
+<div class="chat-container">
+
+  {% if is_tech %}
+  <div class="chat-sidebar {% if selected_user %}mobile-hidden{% endif %}">
+    <div class="chat-sidebar-header">
+      <i class="bi bi-people"></i> Пользователи
+    </div>
+    <div class="user-list">
+      {% for u in users %}
+        <a href="?u={{ u.fio }}" class="user-item {% if u.fio == selected_user %}active{% endif %}">
+          <span class="u-name">{{ u.fio }}</span>
+          <span class="u-role">{{ u.role }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="chat-main {% if is_tech and not selected_user %}mobile-hidden{% endif %}">
+    
+    {% if selected_user %}
+      <div class="chat-header">
+        {% if is_tech %}
+          <a href="/chat" class="back-btn d-none d-sm-inline-block">&larr; Назад</a> 
+        {% endif %}
+        Чат с: {{ selected_user }}
+      </div>
+
+      <div class="messages-area" id="msgArea">
+        {% for m in messages %}
+          <div class="msg {% if m.sender_fio == my_fio %}msg-out{% else %}msg-in{% endif %}" data-id="{{ m.id }}">
+            {{ m.message }}
+            <span class="msg-time">{{ m.created_at.strftime('%H:%M') }}</span>
+          </div>
+        {% else %}
+          <div id="empty-placeholder" style="text-align:center; color:#9ca3af; margin-top:20px;">
+            История сообщений пуста. Напишите первое сообщение!
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="chat-input-area">
+        <input type="text" id="msgInput" class="chat-input" placeholder="Введите сообщение..." autocomplete="off">
+        <button onclick="sendMsg()" class="chat-send-btn"><i class="bi bi-send"></i></button>
+      </div>
+    
+    {% else %}
+      <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#6b7280; flex-direction:column;">
+        <i class="bi bi-chat-left-text" style="font-size:40px; margin-bottom:10px;"></i>
+        Выберите пользователя слева, чтобы начать диалог.
+      </div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+<script>
+  // 1. Определяем переменные
+  const myFio = "{{ my_fio }}"; 
+  const currentPartner = "{{ selected_user }}";
+  const msgArea = document.getElementById('msgArea');
+  const msgInput = document.getElementById('msgInput');
+  let lastMsgId = 0;
+
+  // 2. Функция прокрутки вниз
+  function scrollDown() {
+    if(msgArea) msgArea.scrollTop = msgArea.scrollHeight;
+  }
+
+  // 3. Инициализация: находим ID последнего сообщения на странице
+  function initLastId() {
+    const msgs = document.querySelectorAll('.msg');
+    if (msgs.length > 0) {
+      const last = msgs[msgs.length - 1];
+      lastMsgId = parseInt(last.getAttribute('data-id')) || 0;
+    }
+    scrollDown();
+  }
+
+  // 4. Отправка сообщения
+  function sendMsg() {
+    const text = msgInput.value.trim();
+    if (!text) return;
+
+    fetch('/api/chat/send', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        text: text,
+        recipient: currentPartner
+      })
+    }).then(res => res.json()).then(data => {
+      if(data.ok) {
+        msgInput.value = "";
+        // Сразу запустим обновление, чтобы увидеть свое сообщение
+        fetchUpdates();
+      }
+    });
+  }
+
+  // 5. Получение обновлений (Polling)
+  function fetchUpdates() {
+    if (!currentPartner) return;
+
+    fetch(`/api/chat/updates?u=${encodeURIComponent(currentPartner)}&last_id=${lastMsgId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.messages && data.messages.length > 0) {
+          // Удаляем "пусто", если было
+          const empty = document.getElementById('empty-placeholder');
+          if (empty) empty.remove();
+
+          data.messages.forEach(msg => {
+            appendMessage(msg);
+            // Обновляем ID, чтобы не загрузить это сообщение снова
+            if (msg.id > lastMsgId) lastMsgId = msg.id;
+          });
+          scrollDown();
+        }
+      })
+      .catch(err => console.error("Ошибка чата:", err));
+  }
+
+  // 6. Рисуем сообщение в HTML
+  function appendMessage(msg) {
+    const div = document.createElement('div');
+    // Определяем класс: мое или чужое
+    const typeClass = (msg.sender === myFio) ? 'msg-out' : 'msg-in';
+    
+    div.className = `msg ${typeClass}`;
+    div.setAttribute('data-id', msg.id);
+    
+    // Вырезаем только время (HH:MM) из даты
+    const timePart = msg.created_at.split(' ')[1] || '';
+
+    div.innerHTML = `
+      ${msg.message}
+      <span class="msg-time">${timePart}</span>
+    `;
+    msgArea.appendChild(div);
+  }
+
+  // 7. Запуск
+  if (currentPartner) {
+    initLastId();
+    
+    // Вешаем отправку на Enter
+    msgInput.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') sendMsg();
+    });
+
+    // Запускаем автообновление каждые 3 секунды
+    setInterval(fetchUpdates, 3000);
+  }
+
+</script>
+{% endblock %}

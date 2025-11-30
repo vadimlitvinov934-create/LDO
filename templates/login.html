@@ -1,240 +1,245 @@
 {% extends "base.html" %}
-{% block title %}Вход в систему{% endblock %}
+{% block title %}LDO — Secure Access{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
 <style>
-  /* 1. ПОЛНОЭКРАННАЯ ОБЕРТКА */
-  .login-fullscreen-bg {
+  /* -----------------------------------------------------------
+     1. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И СБРОС (SETUP)
+     ----------------------------------------------------------- */
+  :root {
+    --color-primary: #3b82f6; 
+    --color-primary-dark: #1d4ed8;
+    --color-accent: #8b5cf6;
+    --color-success: #10b981;
+    --color-danger: #ef4444;
+    --color-danger-bg: #fef2f2;
+    
+    --text-main: #111827;
+    --text-secondary: #6b7280;
+    --text-placeholder: #9ca3af;
+    
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(255, 255, 255, 0.8);
+    --blur-strength: 40px;
+
+    --radius-xl: 32px;
+    --radius-md: 16px;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body, html {
+    height: 100%;
+    width: 100%;
+    font-family: 'Manrope', sans-serif;
+    overflow: hidden; 
+    background: #f3f4f6;
+  }
+
+  /* -----------------------------------------------------------
+     2. ЖИВОЙ ФОН (AURORA BACKGROUND)
+     ----------------------------------------------------------- */
+  .background-aurora {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 999; /* Чуть меньше, чем у логотипа */
-    background: linear-gradient(135deg, #e0f2fe 0%, #fff7ed 50%, #fef2f2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* 2. БРЕНДИНГ (ЛОГО В УГЛУ) */
-  .brand-logo {
-    position: absolute;
-    top: 30px;
-    left: 40px;
-    z-index: 10000; /* Поверх всего */
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .logo-text {
-    font-size: 32px;
-    font-weight: 800;
-    line-height: 1;
-    /* Оранжевый градиент для текста LDO */
-    background: linear-gradient(135deg, #ff7b00 0%, #ea580c 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -1px;
-  }
-
-  .logo-sub {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1f2937; /* Темно-серый */
-    opacity: 0.8;
-  }
-
-  /* 3. КАРТОЧКА */
-  .login-card {
+    z-index: 1;
     background: #ffffff;
-    width: 400px;
-    padding: 90px 40px 40px 40px; 
-    border-radius: 24px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
-    text-align: center;
-    position: relative;
-    border: 1px solid rgba(255,255,255,0.8);
+    overflow: hidden;
   }
 
-  /* 4. УВЕЛИЧЕННЫЙ ЛОГОТИП (ВНУТРИ КАРТОЧКИ) */
-  .logo-circle {
+  .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; animation: floatOrb 20s infinite ease-in-out alternate; }
+  .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, #60a5fa 0%, rgba(96,165,250,0) 70%); top: -100px; left: -100px; animation-duration: 25s; }
+  .orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, #a78bfa 0%, rgba(167,139,250,0) 70%); bottom: -50px; right: -100px; animation-duration: 28s; animation-delay: -5s; }
+  .orb-3 { width: 400px; height: 400px; background: radial-gradient(circle, #f472b6 0%, rgba(244,114,182,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-name: pulseOrb; animation-duration: 15s; }
+  .orb-4 { width: 300px; height: 300px; background: radial-gradient(circle, #22d3ee 0%, rgba(34,211,238,0) 70%); top: 10%; right: 15%; animation-duration: 22s; animation-delay: -2s; }
+  .orb-5 { width: 350px; height: 350px; background: radial-gradient(circle, #fde047 0%, rgba(253,224,71,0) 70%); bottom: 10%; left: 10%; animation-duration: 30s; }
+
+  .noise-overlay {
     position: absolute;
-    top: -75px; 
-    left: 50%;
-    transform: translateX(-50%);
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    background: #fff;
-    overflow: hidden; 
-    padding: 0;       
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-    border: 5px solid #fff; 
-  }
-  
-  .logo-circle img {
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover; 
-    display: block;
-  }
-
-  /* Тексты */
-  .login-card h2 {
-    margin: 15px 0 10px 0;
-    font-size: 26px;
-    font-weight: 800;
-    color: #1f2937;
-  }
-
-  .login-card p {
-    color: #6b7280;
-    font-size: 15px;
-    margin-bottom: 30px;
-  }
-
-  /* Поля ввода */
-  .field-wrap {
-    position: relative;
-    margin-bottom: 20px;
-  }
-
-  .field-wrap i {
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #9ca3af;
-    font-size: 18px;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    pointer-events: none;
     z-index: 2;
   }
 
-  .field-wrap input {
+  @keyframes floatOrb {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+
+  @keyframes pulseOrb {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.3; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  }
+
+  /* -----------------------------------------------------------
+     3. ЦЕНТРИРОВАНИЕ (ОСНОВНОЕ ИЗМЕНЕНИЕ)
+     ----------------------------------------------------------- */
+
+  .login-wrapper {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+
     width: 100%;
-    padding: 16px 20px 16px 50px; 
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-    border-radius: 14px;
-    font-size: 16px;
-    color: #111;
-    outline: none;
-    transition: 0.2s;
-  }
+    max-width: 440px;
+    padding: 20px;
 
-  .field-wrap input:focus {
-    background: #fff;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-  }
-  
-  .field-wrap input::placeholder {
-    color: #9ca3af;
-  }
-
-  /* Кнопка */
-  .btn-enter {
-    width: 100%;
-    padding: 16px;
-    background: #2563eb;
-    color: #fff;
-    border: none;
-    border-radius: 14px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 10px;
-    transition: background 0.2s;
-    box-shadow: 0 6px 15px rgba(37, 99, 235, 0.25);
-  }
-
-  .btn-enter:hover {
-    background: #1d4ed8;
-    transform: translateY(-1px);
-  }
-
-  /* Ошибки */
-  .flash-error {
-    background: #fee2e2;
-    color: #b91c1c;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: 14px;
-    margin-bottom: 24px;
-    text-align: left;
-    border: 1px solid #fecaca;
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 8px;
   }
 
-  /* Адаптив для телефонов */
-  @media (max-width: 600px) {
-    .brand-logo {
-      top: 20px;
-      left: 20px;
-    }
-    .logo-text { font-size: 24px; }
-    .logo-sub { font-size: 14px; }
+  .glass-card {
+    width: 100%;
+    padding: 60px 50px 50px 50px;
     
-    .login-card {
-        width: 90%;
-        padding: 80px 20px 30px 20px;
-    }
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-strength));
+    -webkit-backdrop-filter: blur(var(--blur-strength));
+    
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+
+    box-shadow: 
+      0 20px 40px -10px rgba(0,0,0,0.1),
+      0 0 0 1px rgba(255,255,255,0.4) inset;
+
+    transform: none !important;
+    opacity: 1;
   }
+
+  /* -----------------------------------------------------------
+     ОСТАЛЬНЫЕ СТИЛИ (БЕЗ ИЗМЕНЕНИЙ)
+     ----------------------------------------------------------- */
+
+  .glass-card::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 40%; height: 4px; background: linear-gradient(90deg, transparent, var(--color-primary), transparent); border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; opacity: 0.8; }
+  .brand-header { text-align: center; margin-bottom: 40px; position: relative; }
+  .logo-container { width: 100px; height: 100px; margin: 0 auto 20px auto; position: relative; border-radius: 30%; background: #fff; padding: 5px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.25); transform: scale(1); opacity: 1; }
+  .logo-container img { width: 100%; height: 100%; object-fit: cover; border-radius: 26%; display: block; }
+  .logo-ring { position: absolute; top: -5px; left: -5px; right: -5px; bottom: -5px; border-radius: 32%; border: 2px solid transparent; background: linear-gradient(45deg, var(--color-primary), var(--color-accent)) border-box; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: 0.6; animation: spinRing 10s linear infinite; }
+  @keyframes spinRing { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .brand-title { font-size: 48px; font-weight: 800; line-height: 1; letter-spacing: -1px; background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary), var(--color-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .brand-title::after { content: '.'; font-size: 48px; color: var(--color-accent); }
+  .brand-subtitle { display: block; margin-top: 8px; font-size: 15px; color: var(--text-secondary); font-weight: 500; }
+  .login-form { width: 100%; display: flex; flex-direction: column; gap: 24px; }
+  .input-group { position: relative; width: 100%; }
+  .form-input { width: 100%; height: 64px; padding: 24px 20px 8px 50px; font-size: 16px; font-weight: 600; color: var(--text-main); background: rgba(255, 255, 255, 0.5); border: 2px solid transparent; border-radius: var(--radius-md); outline: none; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+  .input-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 20px; color: var(--text-placeholder); transition: color 0.3s; z-index: 2; }
+  .form-label { position: absolute; left: 50px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text-secondary); pointer-events: none; transition: all 0.3s; font-weight: 500; }
+  .form-input:focus, .form-input:not(:placeholder-shown) { background: #ffffff; border-color: var(--color-primary); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15); }
+  .form-input:focus ~ .input-icon, .form-input:not(:placeholder-shown) ~ .input-icon { color: var(--color-primary); }
+  .form-input:focus ~ .form-label, .form-input:not(:placeholder-shown) ~ .form-label { top: 18px; font-size: 12px; color: var(--color-primary); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .form-input::placeholder { color: transparent; }
+  .btn-submit { position: relative; width: 100%; height: 60px; margin-top: 10px; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); color: #fff; border: none; border-radius: var(--radius-md); font-size: 18px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; overflow: hidden; transition: all 0.4s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3); display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .btn-submit i { font-size: 18px; transition: transform 0.3s; }
+  .btn-submit::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transform: skewX(-20deg); transition: 0.5s; }
+  .btn-submit:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(37, 99, 235, 0.5); }
+  .btn-submit:hover::before { left: 120%; }
+  .btn-submit:hover i { transform: translateX(5px); }
+  .btn-submit:active { transform: translateY(-2px) scale(0.98); }
+  .alert-box { width: 100%; margin-bottom: 25px; padding: 16px; border-radius: 12px; display: flex; align-items: flex-start; gap: 12px; font-size: 14px; line-height: 1.5; }
+  .alert-error { background: var(--color-danger-bg); border: 1px solid rgba(239, 68, 68, 0.3); color: #991b1b; }
+  .alert-icon { flex-shrink: 0; font-size: 18px; color: var(--color-danger); margin-top: 2px; }
+  .card-footer { margin-top: 30px; text-align: center; font-size: 14px; color: var(--text-secondary); }
+  .link { color: var(--color-primary); text-decoration: none; font-weight: 600; position: relative; transition: color 0.2s; }
+  .link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0%; height: 2px; background: var(--color-accent); transition: width 0.3s ease; border-radius: 2px; }
+  .link:hover { color: var(--color-primary-dark); }
+  .link:hover::after { width: 100%; }
+
+  @media (max-width: 480px) {
+    .glass-card { padding: 40px 25px; border-radius: 24px; }
+    .brand-title { font-size: 36px; }
+    .logo-container { width: 80px; height: 80px; }
+    .form-input { font-size: 15px; }
+  }
+
+  .decoration-star { position: absolute; color: #fff; opacity: 0.8; z-index: 20; pointer-events: none; }
+
 </style>
 
-<div class="brand-logo">
-  <div class="logo-text">LDO</div>
-  <div class="logo-sub">LDO Attendance</div>
+<div class="background-aurora">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+  <div class="orb orb-5"></div>
+  <div class="noise-overlay"></div>
 </div>
 
-<div class="login-fullscreen-bg">
-  
-  <div class="login-card">
-    <div class="logo-circle">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Лого">
-    </div>
+<div class="login-wrapper">
 
-    <h2>Вход в систему</h2>
-    <p>Введите свои данные для продолжения</p>
+  <div class="glass-card">
+    
+    <div class="brand-header">
+      <div class="logo-container">
+        <div class="logo-ring"></div>
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="LDO Logo">
+      </div>
+      <h1 class="brand-title">LDO</h1>
+      <span class="brand-subtitle">Корпоративная система доступа</span>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for cat, msg in messages %}
           {% if cat == 'error' %}
-            <div class="flash-error">
-              <i class="fas fa-exclamation-circle"></i> {{ msg }}
+            <div class="alert-box alert-error">
+              <i class="fas fa-exclamation-circle alert-icon"></i>
+              <span>{{ msg }}</span>
             </div>
           {% endif %}
         {% endfor %}
       {% endif %}
     {% endwith %}
 
-    <form method="post">
-      <div class="field-wrap">
-        <i class="far fa-user"></i>
-        <input type="text" name="fio" placeholder="ФИО" required autocomplete="off">
+    <form method="post" class="login-form">
+      
+      <div class="input-group">
+        <input type="text" name="fio" id="fio" class="form-input" placeholder=" " required autocomplete="off">
+        <label for="fio" class="form-label">Введите ваше ФИО</label>
+        <i class="far fa-user input-icon"></i>
       </div>
 
-      <div class="field-wrap">
-        <i class="fas fa-lock"></i>
-        <input type="password" name="password" placeholder="Пароль" required>
+      <div class="input-group">
+        <input type="password" name="password" id="password" class="form-input" placeholder=" " required>
+        <label for="password" class="form-label">Ваш пароль</label>
+        <i class="fas fa-lock input-icon"></i>
       </div>
 
-      <button type="submit" class="btn-enter">Войти</button>
+      <button type="submit" class="btn-submit">
+        Войти в систему <i class="fas fa-arrow-right"></i>
+      </button>
+
     </form>
-  </div>
+    
+    <div class="card-footer">
+      <div style="margin-top: 10px; font-size: 12px; opacity: 0.6;">
+        &copy; 2024 LDO Corporation. Все права защищены.
+      </div>
+    </div>
 
+  </div>
 </div>
 {% endblock %}
