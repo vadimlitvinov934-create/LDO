@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Куратор — Мои группы{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --bg-page: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --primary-color: #4f46e5; /* Индиго */
+    --primary-light: #eef2ff;
+    --white: #ffffff;
+    --border: #e5e7eb;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+    --shadow-hover: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  }
+
+  body {
+    background: var(--bg-page);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+
+  /* Заголовок */
+  .header-section {
+    margin-bottom: 30px;
+  }
+  .header-section h2 {
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+  }
+  .header-section p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  /* Сетка групп */
+  .groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+  }
+
+  /* Карточка группы */
+  .group-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .group-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--primary-color);
+  }
+
+  /* Иконка в круге */
+  .icon-wrapper {
+    width: 48px;
+    height: 48px;
+    background: var(--primary-light);
+    color: var(--primary-color);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 16px;
+    transition: 0.2s;
+  }
+  
+  .group-card:hover .icon-wrapper {
+    background: var(--primary-color);
+    color: #fff;
+  }
+
+  .group-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  
+  .group-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .arrow-icon {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    transition: 0.2s;
+  }
+  .group-card:hover .arrow-icon {
+    opacity: 1;
+    color: var(--primary-color);
+    transform: translateX(4px);
+  }
+
+  /* Пустое состояние */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--white);
+    border-radius: 16px;
+    border: 1px dashed var(--border);
+  }
+  .empty-icon {
+    font-size: 48px;
+    color: #d1d5db;
+    margin-bottom: 16px;
+  }
+  .empty-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+</style>
+
+<div class="container">
+  
+  <div class="header-section">
+    <h2>Ваши группы</h2>
+    <p>Выберите группу для просмотра посещаемости и статистики</p>
+  </div>
+
+  {% if groups|length == 0 %}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="far fa-folder-open"></i>
+      </div>
+      <p class="empty-text">
+        К вашему профилю пока не привязаны группы. 
+        <br>Пожалуйста, обратитесь к администратору для назначения.
+      </p>
+    </div>
+  {% else %}
+    <div class="groups-grid">
+      {% for g in groups %}
+        <a href="{{ url_for('curator_bp.group_view') }}?g={{ g }}" class="group-card">
+          <i class="fas fa-arrow-right arrow-icon"></i>
+          
+          <div class="icon-wrapper">
+            <i class="fas fa-users"></i>
+          </div>
+          
+          <div class="group-name">{{ g }}</div>
+          <div class="group-sub">Перейти к статистике</div>
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

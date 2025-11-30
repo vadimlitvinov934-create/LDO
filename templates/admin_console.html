@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Админ-консоль{% endblock %}
+{% block content %}
+
+<style>
+  :root{
+    --bg:#0b1020; --card:#121830; --mut:#a0a7bf; --text:#e8ecff;
+    --br:#1f2a4a; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444; --info:#3b82f6;
+    --chip:#1b2442;
+  }
+  body{ background:var(--bg); color:var(--text); }
+  .wrap{ max-width:860px; margin:0 auto; padding:10px 10px 90px; }
+  .h1{ font-size:20px; font-weight:800; margin:10px 0 8px; }
+
+  .bar{
+    position: sticky; top:0; z-index:10;
+    display:flex; gap:8px; align-items:center; padding:10px;
+    background:var(--card); border-bottom:1px solid var(--br);
+  }
+  .chip{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:var(--chip); border:1px solid var(--br); color:var(--text); font-size:12px;}
+  select, button{ height:36px; border-radius:8px; border:1px solid var(--br); background:#0f152b; color:var(--text); padding:0 10px; }
+  button{ cursor:pointer; }
+  .live{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .live input{ width:18px; height:18px; accent-color:var(--info); }
+
+  .list{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .item{ background:var(--card); border:1px solid var(--br); border-radius:12px; padding:10px; }
+  .head{ display:flex; gap:8px; align-items:baseline; justify-content:space-between; }
+  .lvl{ font-weight:800; text-transform:uppercase; font-size:12px; padding:2px 8px; border-radius:999px; }
+  .lvl.log{ background:#0b2a1a; color:#a7f3d0; border:1px solid #064e3b; }
+  .lvl.info{ background:#0b2348; color:#93c5fd; border:1px solid #1d4ed8; }
+  .lvl.warn{ background:#3a2806; color:#fde68a; border:1px solid #b45309; }
+  .lvl.error{ background:#3a0d10; color:#fecaca; border:1px solid #b91c1c; }
+  .time{ color:var(--mut); font-size:12px; }
+  .msg{ white-space:pre-wrap; margin-top:6px; }
+  .meta{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .meta .chip{ font-size:11px; opacity:.9; }
+
+  /* нижняя панель под телефон */
+  .dock{
+    position: fixed; left:0; right:0; bottom:0; z-index:20;
+    background:var(--card); border-top:1px solid var(--br);
+    display:flex; gap:8px; padding:8px 10px;
+  }
+  .dock .chip{ flex:1; justify-content:center; }
+</style>
+
+<div class="wrap">
+  <div class="h1">Админ-консоль (live)</div>
+
+  <div class="bar">
+    <label>Уровень:</label>
+    <select id="level">
+      <option value="*">Все</option>
+      <option value="error">error</option>
+      <option value="warn">warn</option>
+      <option value="info">info</option>
+      <option value="log">log</option>
+      <option value="hello">hello</option>
+    </select>
+
+    <div class="live">
+      <label class="chip"><input type="checkbox" id="autoref" checked> авто-обновление</label>
+      <button id="reload">Обновить</button>
+      <button id="clear">Очистить локально</button>
+    </div>
+  </div>
+
+  <div id="list" class="list"></div>
+</div>
+
+<!-- нижняя док-панель: краткая инфа об устройстве текущего клиента -->
+<div class="dock">
+  <div class="chip" id="me-ua">UA: —</div>
+  <div class="chip" id="me-res">Screen: —</div>
+</div>
+
+<script>
+(function(){
+  const list = document.getElementById('list');
+  const levelSel = document.getElementById('level');
+  const btnReload = document.getElementById('reload');
+  const btnClear = document.getElementById('clear');
+  const chkAuto = document.getElementById('autoref');
+  let since = 0;
+  let timer = null;
+
+  // краткая инфа о ТЕКУЩЕМ устройстве админа
+  document.getElementById('me-ua').textContent = 'UA: ' + (navigator.userAgent || '—');
+  document.getElementById('me-res').textContent = 'Screen: ' + (window.screen.width + 'x' + window.screen.height);
+
+  function badge(level){
+    return `<span class="lvl ${level}">${level}</span>`;
+  }
+
+  function itemView(ev){
+    const d = ev.device || {};
+    const meta = [
+      ev.user_fio ? `Пользователь: ${ev.user_fio}` : null,
+      ev.ip ? `IP: ${ev.ip}` : null,
+      ev.path ? `URL: ${ev.path}` : null,
+      d.viewport ? `Viewport: ${d.viewport}` : null,
+      d.screen ? `Screen: ${d.screen}` : null,
+      (d.cpu ? `CPU: ${d.cpu} cores` : null),
+      (d.memory ? `RAM: ${d.memory} GB` : null),
+      d.platform ? `Platform: ${d.platform}` : null,
+      d.tz ? `TZ: ${d.tz}` : null,
+      d.language ? `Lang: ${d.language}` : null,
+      ev.session ? `Session: ${ev.session}` : null,
+    ].filter(Boolean).map(x => `<span class="chip">${x}</span>`).join("");
+
+    return `
+      <div class="item">
+        <div class="head">
+          <div>${badge(ev.level)}</div>
+          <div class="time">${ev.ts}</div>
+        </div>
+        <div class="msg">${(ev.message || '').replace(/[<>&]/g, s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</div>
+        <div class="meta">
+          <span class="chip">${(ev.ua || '').split(' ').slice(0,6).join(' ')}</span>
+          ${meta}
+        </div>
+      </div>
+    `;
+  }
+
+  async function fetchEvents() {
+    const params = new URLSearchParams();
+    if (since) params.set('since_id', String(since));
+    const level = levelSel.value || '*';
+    if (level && level !== '*') params.set('level', level);
+    try{
+      const res = await fetch(`/admin/console/events?${params.toString()}`, {cache:'no-store'});
+      const j = await res.json();
+      if (!res.ok || !j.ok) throw new Error('fetch failed');
+      const evs = j.events || [];
+      if (evs.length){
+        const frag = document.createDocumentFragment();
+        evs.forEach(ev => {
+          since = Math.max(since, ev.id);
+          const div = document.createElement('div');
+          div.innerHTML = itemView(ev);
+          frag.appendChild(div.firstElementChild);
+        });
+        list.appendChild(frag);
+        // авто-скролл вниз на телефоне
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
+    }catch(e){
+      // молча — чтобы админка не "мигала"
+    }
+  }
+
+  function start(){
+    stop();
+    fetchEvents();
+    if (chkAuto.checked){
+      timer = setInterval(fetchEvents, 3000);
+    }
+  }
+  function stop(){
+    if (timer){ clearInterval(timer); timer = null; }
+  }
+
+  levelSel.addEventListener('change', () => { since = 0; list.innerHTML = ""; start(); });
+  chkAuto.addEventListener('change', () => start());
+  btnReload.addEventListener('click', () => { fetchEvents(); });
+  btnClear.addEventListener('click', () => { list.innerHTML = ""; since = 0; });
+
+  // первый запуск
+  start();
+})();
+</script>
+
+{% endblock %}

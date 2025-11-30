@@ -11,11 +11,13 @@ from models import SessionLocal, User, Student
 
 # Сотрудники
 STAFF = [
-    {"role": "admin",    "fio": "Администратор",                  "pass": "admin123"},
     {"role": "head",     "fio": "Иванова Галина Петровна",        "pass": "HEADPO"},
     {"role": "curator",  "fio": "Султангазинова Диана Сериковна", "pass": "SDS2025PO115"},
     {"role": "curator",  "fio": "Брусенко Владислав Сергеевич",   "pass": "BRU2025PO175"},
     {"role": "starosta", "fio": "Староста ПО175",                 "pass": "STAR175"},
+    
+    # НОВЫЙ АККАУНТ:
+    {"role": "tech",     "fio": "Техническая Поддержка",          "pass": "tech123"},
 ]
 
 # Студенты (ФИО: Пароль)

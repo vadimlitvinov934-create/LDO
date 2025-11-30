@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}Кабинет студента{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --bg-page: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --white: #ffffff;
+    --primary: #4f46e5;
+    --border: #e5e7eb;
+    
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+    
+    /* Цвета статусов */
+    --c-present: #10b981;
+    --c-late: #f59e0b;
+    --c-absent: #ef4444;
+    --c-excused: #3b82f6;
+  }
+
+  body {
+    background: var(--bg-page);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    padding-bottom: 40px; /* Отступ снизу для мобилок */
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+
+  /* ПРИВЕТСТВИЕ */
+  .hero-card {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: white;
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Декор на фоне */
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 100px; height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+  }
+
+  .hero-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .hero-date { font-size: 14px; opacity: 0.9; display: flex; align-items: center; gap: 6px; }
+
+  /* СЕТКА (Desktop: 2 колонки, Mobile: 1 колонка) */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  @media (min-width: 800px) { .main-grid { grid-template-columns: 400px 1fr; } }
+
+  /* КАРТОЧКА ОБЩАЯ */
+  .section-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    padding: 20px;
+    height: fit-content;
+  }
+  .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+  .card-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card-title i { color: var(--primary); }
+
+  /* РАСПИСАНИЕ (TIMELINE) */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .tl-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: var(--radius-md);
+    border-left: 3px solid transparent; /* Цветная полоска */
+    transition: 0.2s;
+  }
+  
+  /* Текущая пара (можно добавить логику в шаблоне для выделения) */
+  /* .tl-item.active { background: #eef2ff; border-left-color: var(--primary); } */
+
+  .tl-time {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 50px;
+    font-size: 12px; font-weight: 700; color: var(--text-secondary);
+    background: #fff; border-radius: 8px; padding: 4px;
+    border: 1px solid var(--border);
+    height: fit-content;
+  }
+  
+  .tl-info { flex: 1; }
+  .tl-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+  .tl-sub { font-size: 12px; color: var(--text-secondary); }
+
+
+  /* ПОСЕЩАЕМОСТЬ (НЕДЕЛЯ) */
+  /* Адаптивный список дней */
+  .week-list {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  
+  .day-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  
+  .day-header {
+    background: #f9fafb;
+    padding: 10px 14px;
+    font-size: 13px; font-weight: 600; color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between;
+  }
+  
+  /* Сетка пар внутри дня */
+  .pairs-grid {
+    display: grid;
+    /* Мобильный: компактная сетка */
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); 
+    gap: 1px;
+    background: var(--border); /* Цвет разделителей */
+  }
+  
+  .pair-box {
+    background: #fff;
+    padding: 10px 4px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px;
+    min-height: 60px;
+  }
+  
+  .pb-label { font-size: 10px; color: #9ca3af; font-weight: 600; }
+  
+  /* Статус-иконка */
+  .status-icon {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    color: #d1d5db; /* Default empty */
+    background: #f3f4f6;
+  }
+  
+  /* Цвета иконок */
+  .status-icon.present { background: var(--c-present); color: white; }
+  .status-icon.late { background: var(--c-late); color: white; }
+  .status-icon.absent { background: var(--c-absent); color: white; }
+  .status-icon.excused { background: var(--c-excused); color: white; }
+  
+  /* Легенда */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);
+  }
+  .lg-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); }
+  .lg-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+</style>
+
+<div class="container">
+
+  <div class="hero-card">
+    <div class="hero-title">Привет, {{ fio.split()[1] if fio.split()|length > 1 else fio }}! 👋</div>
+    <div class="hero-date">
+      <i class="far fa-calendar-alt"></i> {{ today }}
+    </div>
+  </div>
+
+  <div class="main-grid">
+    
+    <div class="section-card">
+      <div class="card-header">
+        <div class="card-title"><i class="far fa-clock"></i> Сегодня</div>
+      </div>
+      
+      <div class="timeline">
+        {% set has_pairs = false %}
+        {% for p in schedule_today %}
+          {% if p.code.startswith('p') %}
+            {% set has_pairs = true %}
+            <div class="tl-item">
+              <div class="tl-time">
+                <span>{{ p.start }}</span>
+                <span style="height:1px; width:10px; background:#e5e7eb; margin:2px 0;"></span>
+                <span>{{ p.end }}</span>
+              </div>
+              <div class="tl-info">
+                <div class="tl-title">{{ p.title }}</div>
+                <div class="tl-sub">Пара {{ p.code|replace('p','') }}</div>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        {% if not has_pairs %}
+          <div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:14px;">
+            Сегодня пар нет, отдыхай! 🎉
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-chart-bar"></i> Моя неделя</div>
+      </div>
+      
+      <div class="week-list">
+        {% for d in week %}
+          <div class="day-card">
+            <div class="day-header">
+              <span>{{ d.date_text }}</span> </div>
+            
+            <div class="pairs-grid">
+              {% for i in range(1,8) %}
+                {% set key = 'p' ~ i %}
+                {% set s = d['items'].get(key, '') %}
+                
+                <div class="pair-box">
+                  <div class="pb-label">P{{ i }}</div>
+                  
+                  {% if s == 'present' %}
+                    <div class="status-icon present" title="Присутствовал"><i class="fas fa-check"></i></div>
+                  {% elif s == 'late' %}
+                    <div class="status-icon late" title="Опоздал"><i class="fas fa-clock"></i></div>
+                  {% elif s == 'absent' %}
+                    <div class="status-icon absent" title="Отсутствовал"><i class="fas fa-times"></i></div>
+                  {% elif s == 'excused' %}
+                    <div class="status-icon excused" title="Уважительная"><i class="fas fa-file-medical"></i></div>
+                  {% else %}
+                    <div class="status-icon" title="Нет отметки">•</div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="legend">
+        <div class="lg-item"><span class="lg-dot" style="background:var(--c-present)"></span> Был</div>
+        <div class="lg-item"><span class="lg-dot" style="background:var(--c-late)"></span> Опоздал</div>
+        <div class="lg-item"><span class="lg-dot" style="background:var(--c-absent)"></span> Н/Б</div>
+        <div class="lg-item"><span class="lg-dot" style="background:var(--c-excused)"></span> Уваж.</div>
+        <div class="lg-item"><span class="lg-dot" style="background:#e5e7eb"></span> Нет пары</div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+{% endblock %}
