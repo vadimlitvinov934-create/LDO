@@ -37,15 +37,17 @@ def login():
         session_db = SessionLocal()
         try:
             # 1. Сначала ищем сотрудника (User)
-            # Мы ищем по полю fio, так как в логин форме вводится fio
             user = session_db.query(User).filter(User.fio == fio).first()
             
             if user and check_password_hash(user.password_hash, password):
                 # Успешный вход сотрудника
-                home_url = "/journal" # default
+                home_url = "/journal" # default (для куратора)
+                
                 if user.role == "head": home_url = "/head"
                 if user.role == "starosta": home_url = "/starosta"
-                if user.role == "admin": home_url = "/admin/console"
+                if user.role == "tech": home_url = "/tech"  # <--- ДОБАВЛЕН РЕДИРЕКТ
+
+                # if user.role == "admin": home_url = "/admin/console" <--- УДАЛЕНО
 
                 session["user"] = {"role": user.role, "fio": user.fio}
                 session.permanent = True
