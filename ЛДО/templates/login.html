@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Вход в систему{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<style>
+  /* 1. ПОЛНОЭКРАННАЯ ОБЕРТКА */
+  .login-fullscreen-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999; /* Чуть меньше, чем у логотипа */
+    background: linear-gradient(135deg, #e0f2fe 0%, #fff7ed 50%, #fef2f2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 2. БРЕНДИНГ (ЛОГО В УГЛУ) */
+  .brand-logo {
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    z-index: 10000; /* Поверх всего */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .logo-text {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    /* Оранжевый градиент для текста LDO */
+    background: linear-gradient(135deg, #ff7b00 0%, #ea580c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+  }
+
+  .logo-sub {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937; /* Темно-серый */
+    opacity: 0.8;
+  }
+
+  /* 3. КАРТОЧКА */
+  .login-card {
+    background: #ffffff;
+    width: 400px;
+    padding: 90px 40px 40px 40px; 
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.8);
+  }
+
+  /* 4. УВЕЛИЧЕННЫЙ ЛОГОТИП (ВНУТРИ КАРТОЧКИ) */
+  .logo-circle {
+    position: absolute;
+    top: -75px; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: #fff;
+    overflow: hidden; 
+    padding: 0;       
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    border: 5px solid #fff; 
+  }
+  
+  .logo-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+    display: block;
+  }
+
+  /* Тексты */
+  .login-card h2 {
+    margin: 15px 0 10px 0;
+    font-size: 26px;
+    font-weight: 800;
+    color: #1f2937;
+  }
+
+  .login-card p {
+    color: #6b7280;
+    font-size: 15px;
+    margin-bottom: 30px;
+  }
+
+  /* Поля ввода */
+  .field-wrap {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  .field-wrap i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 18px;
+    z-index: 2;
+  }
+
+  .field-wrap input {
+    width: 100%;
+    padding: 16px 20px 16px 50px; 
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    border-radius: 14px;
+    font-size: 16px;
+    color: #111;
+    outline: none;
+    transition: 0.2s;
+  }
+
+  .field-wrap input:focus {
+    background: #fff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+  
+  .field-wrap input::placeholder {
+    color: #9ca3af;
+  }
+
+  /* Кнопка */
+  .btn-enter {
+    width: 100%;
+    padding: 16px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s;
+    box-shadow: 0 6px 15px rgba(37, 99, 235, 0.25);
+  }
+
+  .btn-enter:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+  }
+
+  /* Ошибки */
+  .flash-error {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 24px;
+    text-align: left;
+    border: 1px solid #fecaca;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Адаптив для телефонов */
+  @media (max-width: 600px) {
+    .brand-logo {
+      top: 20px;
+      left: 20px;
+    }
+    .logo-text { font-size: 24px; }
+    .logo-sub { font-size: 14px; }
+    
+    .login-card {
+        width: 90%;
+        padding: 80px 20px 30px 20px;
+    }
+  }
+</style>
+
+<div class="brand-logo">
+  <div class="logo-text">LDO</div>
+  <div class="logo-sub">LDO Attendance</div>
+</div>
+
+<div class="login-fullscreen-bg">
+  
+  <div class="login-card">
+    <div class="logo-circle">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Лого">
+    </div>
+
+    <h2>Вход в систему</h2>
+    <p>Введите свои данные для продолжения</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          {% if cat == 'error' %}
+            <div class="flash-error">
+              <i class="fas fa-exclamation-circle"></i> {{ msg }}
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+      <div class="field-wrap">
+        <i class="far fa-user"></i>
+        <input type="text" name="fio" placeholder="ФИО" required autocomplete="off">
+      </div>
+
+      <div class="field-wrap">
+        <i class="fas fa-lock"></i>
+        <input type="password" name="password" placeholder="Пароль" required>
+      </div>
+
+      <button type="submit" class="btn-enter">Войти</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

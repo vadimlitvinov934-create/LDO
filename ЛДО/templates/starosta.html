@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+{% block title %}Староста — Отметка{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --bg-page: #f3f4f6;
+    --white: #ffffff;
+    --primary: #4f46e5;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    
+    /* Цвета состояний */
+    --color-selected-bg: #eef2ff;
+    --color-selected-border: #4f46e5;
+    
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-float: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  body {
+    background: var(--bg-page);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+    /* Убираем отступы body для мобилок, если они есть в base.html */
+    padding-bottom: 80px; /* Место под плавающую кнопку если нужно, или просто воздух */
+  }
+
+  .mobile-container {
+    max-width: 600px; /* Ограничиваем ширину, чтобы на ПК не разъезжалось */
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  /* ШАПКА */
+  .header-card {
+    background: var(--white);
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  
+  .header-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .header-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  /* БЛОК "ТЕКУЩАЯ ПАРА" */
+  .lesson-card {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: white;
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .lesson-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+    margin-bottom: 6px;
+  }
+  .lesson-name {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .lesson-time {
+    font-size: 14px;
+    opacity: 0.9;
+    font-weight: 500;
+  }
+  
+  /* Если пара закрыта */
+  .lesson-card.locked {
+    background: #374151; /* Темно-серый */
+    box-shadow: none;
+  }
+  .locked-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; margin-bottom: 10px;
+  }
+
+  /* СПИСОК СТУДЕНТОВ (Сетка) */
+  .students-title {
+    font-size: 15px; font-weight: 600; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  
+  .students-grid {
+    display: grid;
+    /* На мобильных 1 колонка, на чуть больших 2 */
+    grid-template-columns: 1fr; 
+    gap: 10px;
+  }
+  @media (min-width: 450px) {
+    .students-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Интерактивная карточка студента */
+  .student-item {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Скрываем стандартный чекбокс */
+  .student-item input[type="checkbox"] {
+    position: absolute; opacity: 0; width: 0; height: 0;
+  }
+
+  .st-card {
+    display: flex;
+    align-items: center;
+    background: var(--white);
+    padding: 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+  }
+  
+  .st-avatar {
+    width: 36px; height: 36px;
+    background: #f3f4f6;
+    color: var(--text-muted);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px;
+    margin-right: 12px;
+    flex-shrink: 0;
+    transition: 0.2s;
+  }
+  
+  .st-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-main);
+  }
+
+  /* Состояние SELECTED */
+  .student-item input:checked + .st-card {
+    border-color: var(--primary);
+    background: var(--color-selected-bg);
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1);
+  }
+  .student-item input:checked + .st-card .st-avatar {
+    background: var(--primary);
+    color: white;
+  }
+  
+  /* Галочка, появляющаяся при выборе */
+  .check-icon {
+    margin-left: auto;
+    color: var(--primary);
+    font-size: 16px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .student-item input:checked + .st-card .check-icon {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+
+  /* НИЖНЯЯ ПАНЕЛЬ ДЕЙСТВИЙ */
+  .actions-section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-top: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .status-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; display: block; }
+
+  /* Переключатель статусов (Segmented Control) */
+  .status-group {
+    display: flex;
+    background: #f3f4f6;
+    padding: 4px;
+    border-radius: 12px;
+    gap: 4px;
+  }
+  
+  .status-option {
+    flex: 1;
+    position: relative;
+    cursor: pointer;
+  }
+  .status-option input { display: none; }
+  
+  .status-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: 0.2s;
+    text-align: center;
+  }
+  .status-btn i { font-size: 16px; margin-bottom: 4px; }
+
+  /* Активные состояния статусов */
+  .status-option input:checked + .status-btn {
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: var(--text-main);
+    font-weight: 700;
+  }
+  
+  /* Цветовые акценты для активных кнопок */
+  .status-option:nth-child(1) input:checked + .status-btn { color: #10b981; } /* Зеленый (Был) */
+  .status-option:nth-child(2) input:checked + .status-btn { color: #ef4444; } /* Красный (Не был) */
+  .status-option:nth-child(3) input:checked + .status-btn { color: #3b82f6; } /* Синий (Уваж) */
+
+  /* Выбор причины */
+  .reason-wrap {
+    margin-top: 12px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease;
+  }
+  .reason-wrap.show { max-height: 100px; }
+  
+  .reason-select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 14px;
+    outline: none;
+  }
+
+  /* Главная кнопка */
+  .btn-submit {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    transition: 0.2s;
+  }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled { background: #9ca3af; box-shadow: none; }
+
+</style>
+
+<div class="mobile-container">
+  
+  <div class="header-card">
+    <div class="header-title">Староста — Отметка</div>
+    <div class="header-sub">Группа: <b>{{ group_code or '—' }}</b></div>
+  </div>
+
+  {% if locked %}
+    <div class="lesson-card locked">
+      <div class="locked-badge"><i class="fas fa-lock"></i> Отправка закрыта</div>
+      <div class="lesson-name">Данные уже отправлены</div>
+      <div class="lesson-time">Повторная отправка недоступна</div>
+    </div>
+  {% else %}
+    <div class="lesson-card">
+      {% if current_index is not none and current_index >= 0 and current_index < schedule|length %}
+        {% set p = schedule[current_index] %}
+        <div class="lesson-label">Текущая пара</div>
+        <div class="lesson-name">{{ p.title }}</div>
+        <div class="lesson-time"><i class="far fa-clock"></i> {{ p.start }} – {{ p.end }}</div>
+      {% else %}
+        <div class="lesson-label">Нет активной пары</div>
+        <div class="lesson-time">Сейчас перемена или пары закончились</div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('starosta.starosta_submit') }}">
+    
+    <div class="students-title">
+      <span>Кого отметить?</span>
+      {% if not locked and students|length > 0 %}
+        <small style="color:var(--primary); cursor:pointer;" onclick="toggleAll(this)">Выбрать всех</small>
+      {% endif %}
+    </div>
+
+    {% if students|length == 0 %}
+      <div style="text-align:center; padding:30px; color:var(--text-muted); background:#fff; border-radius:12px;">
+        Список студентов пуст
+      </div>
+    {% else %}
+      <div class="students-grid">
+        {% for s in students %}
+          <label class="student-item">
+            <input type="checkbox" name="student_ids" value="{{ s.id }}" class="st-cb">
+            <div class="st-card">
+              <div class="st-avatar">{{ s.full_name[:1] }}</div>
+              <div class="st-name">{{ s.full_name }}</div>
+              <i class="fas fa-check-circle check-icon"></i>
+            </div>
+          </label>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="actions-section">
+      <span class="status-label">Какой статус поставить выбранным?</span>
+      
+      <div class="status-group">
+        <label class="status-option">
+          <input type="radio" name="status" value="present" checked>
+          <div class="status-btn">
+            <i class="fas fa-check"></i> Был
+          </div>
+        </label>
+        
+        <label class="status-option">
+          <input type="radio" name="status" value="absent">
+          <div class="status-btn">
+            <i class="fas fa-times"></i> Не был
+          </div>
+        </label>
+        
+        <label class="status-option">
+          <input type="radio" name="status" value="excused" id="radioExcused">
+          <div class="status-btn">
+            <i class="fas fa-file-medical"></i> Уваж.
+          </div>
+        </label>
+      </div>
+
+      <div class="reason-wrap" id="reasonWrap">
+        <select name="reason" id="reasonSel" class="reason-select" disabled>
+          <option value="">Выберите причину...</option>
+          {% for r in excused_reasons %}
+            <option value="{{ r }}">{{ r|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button class="btn-submit" type="submit" {% if locked %}disabled{% endif %}>
+        Отправить данные
+      </button>
+      
+      {% if not locked %}
+      <div style="text-align:center; margin-top:12px;">
+         <a href="{{ url_for('starosta.starosta_form') }}" style="font-size:13px; color:var(--text-muted); text-decoration:none;">
+           <i class="fas fa-sync"></i> Обновить страницу
+         </a>
+      </div>
+      {% endif %}
+    </div>
+
+  </form>
+</div>
+
+<script>
+  // Логика переключения "Уважительная причина"
+  const radioExcused = document.getElementById('radioExcused');
+  const reasonWrap = document.getElementById('reasonWrap');
+  const reasonSel = document.getElementById('reasonSel');
+  const radios = document.querySelectorAll('input[name="status"]');
+
+  function checkReason() {
+    if (radioExcused.checked) {
+      reasonWrap.classList.add('show');
+      reasonSel.disabled = false;
+    } else {
+      reasonWrap.classList.remove('show');
+      reasonSel.disabled = true;
+      reasonSel.value = "";
+    }
+  }
+
+  radios.forEach(r => r.addEventListener('change', checkReason));
+
+  // Логика "Выбрать всех"
+  function toggleAll(btn) {
+    const cbs = document.querySelectorAll('.st-cb');
+    // Если есть хоть один невыбранный -> выбрать все. Иначе снять все.
+    let allChecked = true;
+    cbs.forEach(cb => { if(!cb.checked) allChecked = false; });
+    
+    const newState = !allChecked;
+    cbs.forEach(cb => cb.checked = newState);
+    
+    btn.textContent = newState ? "Снять выделение" : "Выбрать всех";
+  }
+</script>
+
+{% endblock %}

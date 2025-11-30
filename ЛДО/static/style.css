@@ -1,0 +1,212 @@
+:root {
+  --border:#e5e7eb;
+  --muted:#6b7280;
+  --primary:#ff7b00;
+  --primary-700:#e86f00;
+  --primary-800:#cc6100;
+  --radius:14px;
+  --surface:#fff;
+  --text:#111827;
+  --shadow:0 10px 28px rgba(0,0,0,.08);
+  --space-1:6px;
+  --space-2:10px;
+  --space-3:14px;
+  --space-4:18px;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+  background: #f8fafc;
+  color: var(--text);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ─────────────── HEADER ─────────────── */
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  color: var(--text);
+  padding: 12px 20px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+.site-header .brand { font-weight: 600; letter-spacing: .2px; }
+
+.site-header nav {
+  display: flex;
+  gap: 8px;
+  overflow: auto hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Оранжевые кнопки в навигации */
+.site-header nav a {
+  background: var(--primary);
+  color: #fff;
+  text-decoration: none;
+  padding: 7px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: none; /* убрали анимацию */
+}
+.site-header nav a:hover { background: var(--primary-700); }
+.site-header nav a:active { background: var(--primary-800); }
+.site-header nav a.active { background: var(--primary-700); }
+
+main { padding: 18px; }
+
+/* ─────────────── FLASH ─────────────── */
+.flash { padding:10px 12px; border-radius:10px; margin:8px 0; }
+.flash.ok { background:#f0fdf4; border:1px solid #16a34a33; }
+.flash.error { background:#fef2f2; border:1px solid #ef444433; }
+
+/* ─────────────── JOURNAL TABLE ─────────────── */
+.table-wrap { overflow:auto; -webkit-overflow-scrolling:touch; }
+table.journal { width:100%; border-collapse:separate; border-spacing:0 6px; }
+table.journal thead th {
+  position:sticky; top:0; z-index:1;
+  background:#fff; border-bottom:1px solid var(--border);
+  padding:8px 10px; text-align:left;
+}
+table.journal tbody td {
+  background:#fff; border:1px solid var(--border);
+  padding:8px 10px;
+}
+
+/* клетки/бейджи */
+.cell-wrap { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.badge {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:2px 8px; border-radius:999px; border:1px solid var(--border);
+  font-size:12px; background:#fff;
+}
+.badge.ok { border-color:#16a34a33; background:#f0fdf4; }
+.badge.late { border-color:#f59e0b33; background:#fffbeb; }
+.badge.absent { border-color:#ef444433; background:#fef2f2; }
+.badge.excused { border-color:#3b82f633; background:#eff6ff; }
+.badge.skip { border-color:#94a3b833; background:#f1f5f9; }
+.badge.empty { opacity:.6; }
+.reason { font-size:12px; color:#6b7280; }
+.marktime { font-size:12px; color:#334155; }
+.th-skipped { opacity:.6; text-decoration:line-through; }
+
+/* ─────────────── SKIPBAR ─────────────── */
+.skipbar {
+  background:#fff; border:1px solid var(--border);
+  border-radius:14px; padding:12px; margin:12px 0;
+  box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
+.skip-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+.skip-item {
+  display:flex; align-items:center; gap:8px;
+  border:1px solid var(--border); border-radius:10px;
+  padding:8px; background:#fff;
+}
+.skip-item input[type="checkbox"] { width:18px; height:18px; }
+.skip-item .lbl { display:flex; flex-direction:column; font-weight:700; }
+.skip-item .lbl small { font-weight:500; color:var(--muted); }
+
+/* ─────────────── PROFILE CARD ─────────────── */
+.profile-card {
+  background: var(--surface,#fff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding:16px 20px;
+  max-width:800px;
+  margin:12px auto 24px;
+}
+.profile-card h2 { font-size:20px; margin-bottom:6px; color:var(--text); }
+.profile-card p { margin:4px 0; color:var(--muted); font-size:15px; }
+.title { font-size:26px; font-weight:600; margin-bottom:10px; text-align:center; }
+
+/* ─────────────── MOBILE ≤ 740px ─────────────── */
+@media (max-width:740px) {
+  main { padding: var(--space-3); }
+  .title { font-size:22px; line-height:1.25; padding:0 var(--space-2); }
+
+  .site-header {
+    flex-direction:column;
+    align-items:flex-start;
+    padding:12px var(--space-3);
+  }
+  .site-header nav { width:100%; }
+  .site-header nav a { padding:8px 12px; }
+
+  .profile-card {
+    margin:10px auto 18px;
+    padding:14px var(--space-3);
+    max-width:100%;
+  }
+  .profile-card h2 { font-size:18px; }
+  .profile-card p { font-size:14px; }
+
+  table.journal thead th, table.journal tbody td { padding:8px; }
+  .badge { font-size:11px; padding:2px 8px; }
+  .reason, .marktime { font-size:11px; }
+
+  .skip-grid { grid-template-columns:repeat(3,1fr); }
+  .skip-item { padding:8px; }
+  .skip-item input[type="checkbox"] { width:20px; height:20px; }
+}
+
+/* ─────────────── VERY SMALL ≤ 420px ─────────────── */
+@media (max-width:420px) {
+  .title { font-size:20px; }
+
+  .site-header { gap:8px; }
+  .site-header nav { gap:6px; }
+  .site-header nav a { padding:7px 10px; font-size:14px; }
+
+  main { padding: var(--space-2); }
+
+  .profile-card {
+    padding:12px var(--space-2);
+    border-radius:12px;
+  }
+  .profile-card h2 { font-size:17px; }
+  .profile-card p { font-size:13px; }
+
+  table.journal thead th, table.journal tbody td { padding:6px 8px; font-size:13px; }
+  .cell-wrap { gap:4px; }
+  .badge { font-size:10.5px; padding:2px 7px; }
+  .reason, .marktime { font-size:10.5px; }
+
+  .skip-grid { grid-template-columns:repeat(2,1fr); gap:6px; }
+  .skip-item { padding:10px; }
+  .skip-item .lbl { font-size:14px; }
+  .skip-item .lbl small { font-size:12px; }
+  .skip-item input[type="checkbox"] { width:22px; height:22px; }
+
+  .table-wrap { margin:0 -12px; padding:0 12px; }
+}
+
+/* ─────────────── ULTRA COMPACT ≤ 360px ─────────────── */
+@media (max-width:360px) {
+  .title { font-size:18px; }
+  .profile-card h2 { font-size:16px; }
+  .profile-card p { font-size:12.5px; }
+  .skip-item .lbl { font-size:13.5px; }
+}
+
+/* логотип на странице входа */
+.login-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
+}
+
+.login-logo img {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(0,0,0,0.08);
+}

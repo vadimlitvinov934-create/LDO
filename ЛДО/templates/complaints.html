@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Жалобы{% endblock %}
+{% block content %}
+
+<h1>Жалобы от старосты</h1>
+
+<ul id="complaints-list" class="c-list">
+  {% for c in items %}
+    <li data-id="{{ c.id }}" class="c-item">
+      <div class="c-row">
+        <strong>{{ c.target_name }}</strong>
+        <span class="muted">Пара: {{ c.period_index }}</span>
+        <span class="muted">{{ c.created_at.strftime("%Y-%m-%d %H:%M:%S") }}</span>
+      </div>
+      <div class="c-reason">{{ c.reason|e }}</div>
+    </li>
+  {% else %}
+    <li class="muted">Пока нет жалоб</li>
+  {% endfor %}
+</ul>
+
+<!-- Модалка -->
+<div id="modal" class="modal" style="display:none;">
+  <div class="modal__backdrop"></div>
+  <div class="modal__content">
+    <h3 id="m-title">Жалоба</h3>
+    <div class="m-line"><b>На кого:</b> <span id="m-target"></span></div>
+    <div class="m-line"><b>Пара:</b> <span id="m-period"></span></div>
+    <div class="m-line"><b>Причина:</b> <span id="m-reason"></span></div>
+    <div class="m-line"><b>Отправитель:</b> <span id="m-from"></span></div>
+    <div class="m-line"><b>Время:</b> <span id="m-time"></span></div>
+    <div class="actions">
+      <button id="m-close" class="btn">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast" style="display:none;"></div>
+
+<style>
+.c-list{list-style:none;padding:0;margin:16px 0;display:grid;gap:10px;}
+.c-item{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;cursor:pointer;}
+.c-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+.c-reason{color:#111;}
+.muted{color:#6b7280}
+.toast{position:fixed;right:16px;bottom:16px;background:#111;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.2);}
+.modal{position:fixed;inset:0;display:block;}
+.modal[style*="display: none"]{display:none;}
+.modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.35);}
+.modal__content{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(560px,90vw);background:#fff;border-radius:16px;padding:18px;border:1px solid #e5e7eb;}
+.btn{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:8px 12px;cursor:pointer;}
+.actions{display:flex;justify-content:flex-end;margin-top:12px;}
+</style>
+
+<script>
+(function(){
+  const list = document.getElementById('complaints-list');
+  const toast = document.getElementById('toast');
+  const modal = document.getElementById('modal');
+  const mTitle = document.getElementById('m-title');
+  const mTarget = document.getElementById('m-target');
+  const mPeriod = document.getElementById('m-period');
+  const mReason = document.getElementById('m-reason');
+  const mFrom = document.getElementById('m-from');
+  const mTime = document.getElementById('m-time');
+  const mClose = document.getElementById('m-close');
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(()=> toast.style.display='none', 3500);
+  }
+
+  function openModal(c){
+    mTitle.textContent = 'Жалоба #' + c.id;
+    mTarget.textContent = c.target_name;
+    mPeriod.textContent = c.period_index;
+    mReason.textContent = c.reason;
+    mFrom.textContent = c.from_name;
+    mTime.textContent = new Date(c.created_at).toLocaleString();
+    modal.style.display = 'block';
+  }
+  mClose.addEventListener('click', ()=> modal.style.display='none');
+  modal.querySelector('.modal__backdrop').addEventListener('click', ()=> modal.style.display='none');
+
+  // Клик по существующим
+  list.addEventListener('click', (e)=>{
+    const li = e.target.closest('.c-item');
+    if(!li) return;
+    const c = {
+      id: li.dataset.id,
+      target_name: li.querySelector('strong')?.textContent || '',
+      period_index: (li.querySelector('.muted')?.textContent || '').replace(/^.*?:\s*/,''),
+      reason: li.querySelector('.c-reason')?.textContent || '',
+      from_name: '', created_at: ''
+    };
+    openModal(c);
+  });
+
+  // Подключение SSE для мгновенных жалоб
+  const es = new EventSource('/complaints/stream');
+  es.addEventListener('ping', ()=>{});
+  es.onmessage = (ev)=>{
+    try{
+      const c = JSON.parse(ev.data);
+      // добавим в начало списка
+      const li = document.createElement('li');
+      li.className = 'c-item';
+      li.dataset.id = c.id;
+      li.innerHTML = `
+        <div class="c-row">
+          <strong>${c.target_name}</strong>
+          <span class="muted">Пара: ${c.period_index}</span>
+          <span class="muted">${new Date(c.created_at).toLocaleString()}</span>
+        </div>
+        <div class="c-reason">${c.reason}</div>
+      `;
+      list.prepend(li);
+      showToast('К вам пришло сообщение от Старосты');
+      // по желанию — сразу открыть модалку:
+      // openModal(c);
+    }catch(e){ console.error(e); }
+  };
+})();
+</script>
+{% endblock %}

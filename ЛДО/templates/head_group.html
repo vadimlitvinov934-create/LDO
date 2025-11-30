@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+{% block title %}Заведующая — {{ group }}{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+
+<style>
+  :root {
+    --font-main: 'Inter', sans-serif;
+    --bg-page: #f3f4f6;
+    --bg-card: #ffffff;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --excel-color: #10b981;
+    --excel-hover: #059669;
+
+    --radius-md: 12px;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+
+    /* Цвета статусов */
+    --color-present: #10b981;
+    --color-late: #f59e0b;
+    --color-absent: #ef4444;
+    --color-excused: #3b82f6;
+  }
+
+  body { background: var(--bg-page); color: var(--text-primary); font-family: var(--font-main); }
+
+  /* ЗАГОЛОВОК И EXCEL */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .page-title h1 { font-size: 24px; font-weight: 700; margin: 0; }
+  .page-title .subtitle { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+
+  .btn-excel {
+    background-color: var(--excel-color);
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+    border: none;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-excel:hover { background-color: var(--excel-hover); transform: translateY(-1px); color: white; }
+
+  /* ПАНЕЛЬ ФИЛЬТРОВ */
+  .filters-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  
+  .form-control {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    min-width: 140px;
+  }
+  .form-control:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+  .btn-show {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn-show:hover { background: var(--primary-hover); }
+
+  .period-badge {
+    margin-left: auto;
+    background: #f3f4f6;
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+  }
+  @media (max-width: 768px) { .period-badge { margin-left: 0; width: 100%; text-align: center; } }
+
+
+  /* СЕТКА КОНТЕНТА */
+  .grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) { .grid-layout { grid-template-columns: 1fr; } }
+
+  /* КАРТОЧКА ОБЩАЯ */
+  .card-box {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    height: 100%;
+  }
+  .card-title {
+    font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text-primary);
+    padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
+  }
+
+  /* Сводная таблица (вверху) */
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .summary-table td, .summary-table th { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+  .summary-table tr:last-child td { border-bottom: none; }
+  .st-val { font-weight: 600; text-align: right; }
+  .st-pct { font-weight: 700; text-align: right; width: 60px; }
+  
+  /* Диаграмма */
+  .chart-wrapper {
+    position: relative;
+    height: 220px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ТАБЛИЦЫ ДЕТАЛЬНЫЕ */
+  .table-responsive {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  
+  .data-table th {
+    background: #f9fafb;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+  }
+  .data-table th:first-child, .data-table td:first-child { text-align: center; } /* Номер */
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    text-align: center;
+  }
+  .data-table td:nth-child(2) { text-align: left; font-weight: 500; min-width: 180px; } /* Имя */
+  
+  .data-table tr:hover { background: #f8fafc; }
+
+  /* Цвета в таблице */
+  .col-total { font-weight: 700; color: var(--primary-color); background: #fbfbfe; }
+  .col-danger { color: #dc2626; background: #fef2f2; font-weight: 600; }
+  .tr-summary td { background: #eff6ff; font-weight: 700; color: #1e3a8a; }
+
+  /* Журнал (правая колонка) */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    background: #f3f4f6; color: #6b7280;
+  }
+  .badge.present { background: #d1fae5; color: #065f46; }
+  .badge.late { background: #fef3c7; color: #92400e; }
+  .badge.absent { background: #fee2e2; color: #991b1b; }
+  .badge.excused { background: #dbeafe; color: #1e40af; }
+  .badge .reason { font-weight: 400; opacity: 0.8; margin-left: 4px; }
+
+</style>
+
+<div class="page-header">
+  <div class="page-title">
+    <h1>Группа {{ group }}</h1>
+    <div class="subtitle">Сводная статистика и журнал</div>
+  </div>
+  
+  <a class="btn-excel" href="{{ url_for('head_bp.group_export_excel', g=group, day=day.isoformat(), mode=mode) }}">
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+    Скачать Excel
+  </a>
+</div>
+
+<form class="filters-card" method="get" action="{{ url_for('head_bp.group_view') }}">
+  <input type="hidden" name="g" value="{{ group }}">
+
+  <div class="form-group">
+    <label class="form-label">День</label>
+    <input type="date" name="day" value="{{ day.isoformat() }}" class="form-control">
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Режим</label>
+    <select name="mode" class="form-control">
+      <option value="day" {{ 'selected' if mode=='day' else '' }}>День</option>
+      <option value="month" {{ 'selected' if mode=='month' else '' }}>Месяц</option>
+      <option value="semester" {{ 'selected' if mode=='semester' else '' }}>Семестр</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn-show">Показать</button>
+
+  <div class="period-badge">
+    Период: {{ start.strftime('%d.%m.%Y') }} — {{ end.strftime('%d.%m.%Y') }}
+  </div>
+</form>
+
+<div class="grid-layout">
+  
+  <div class="card-box" style="display:flex; flex-direction:column; align-items:center;">
+    <div class="card-title" style="width:100%; text-align:left;">Диаграмма посещаемости</div>
+    <div class="chart-wrapper">
+      <canvas id="chart1"
+        data-chart='{{ {
+          "labels": ["Присутствовал","Опоздал","Отсутствовал","Уважительная"],
+          "datasets": [{
+            "data": [
+              stats.counts.present|default(0),
+              stats.counts.late|default(0),
+              stats.counts.absent|default(0),
+              stats.counts.excused|default(0)
+            ],
+            "backgroundColor": ["#10b981", "#f59e0b", "#ef4444", "#3b82f6"],
+            "borderWidth": 0
+          }]
+        } | tojson | safe }}'>
+      </canvas>
+    </div>
+  </div>
+
+  <div class="card-box">
+    <div class="card-title">Сводные данные ({{ mode=='day' and 'за день' or mode=='month' and 'за месяц' or 'за семестр' }})</div>
+    <table class="summary-table">
+      <tbody>
+        <tr>
+          <td><span style="color:var(--color-present)">●</span> Присутствовал</td>
+          <td class="st-val">{{ stats.counts.present }}</td>
+          <td class="st-pct">{{ '%.1f'|format(stats.pct.present) }}%</td>
+        </tr>
+        <tr>
+          <td><span style="color:var(--color-late)">●</span> Опоздал</td>
+          <td class="st-val">{{ stats.counts.late }}</td>
+          <td class="st-pct">{{ '%.1f'|format(stats.pct.late) }}%</td>
+        </tr>
+        <tr>
+          <td><span style="color:var(--color-absent)">●</span> Отсутствовал</td>
+          <td class="st-val">{{ stats.counts.absent }}</td>
+          <td class="st-pct">{{ '%.1f'|format(stats.pct.absent) }}%</td>
+        </tr>
+        <tr>
+          <td><span style="color:var(--color-excused)">●</span> Уважительная</td>
+          <td class="st-val">{{ stats.counts.excused }}</td>
+          <td class="st-pct">{{ '%.1f'|format(stats.pct.excused) }}%</td>
+        </tr>
+        <tr style="border-top: 2px solid #e5e7eb; font-weight:700;">
+          <td>Всего отметок</td>
+          <td class="st-val">{{ stats.total }}</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid-layout" style="align-items:stretch;">
+  
+  <div class="card-box" style="padding:0; overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border-color); font-weight:700; background:#f9fafb;">
+      Детальная статистика по студентам
+    </div>
+    
+    {% if detail.rows|length == 0 %}
+      <div style="padding:30px; text-align:center; color:var(--text-secondary);">Нет данных</div>
+    {% else %}
+      <div class="table-responsive" style="border:none; border-radius:0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th rowspan="2">№</th>
+              <th rowspan="2">Студент</th>
+              <th rowspan="2" class="col-total">Всего<br>часов</th>
+              <th colspan="5">Причины пропусков</th>
+              <th rowspan="2">%</th>
+            </tr>
+            <tr>
+              <th>Заяв.</th>
+              <th>Бол.</th>
+              <th>Сорев.</th>
+              <th>Др.</th>
+              <th class="col-danger">Неуваж.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in detail.rows %}
+            <tr>
+              <td>{{ row.num }}</td>
+              <td>{{ row.full_name }}</td>
+              <td class="col-total">{{ row.total }}</td>
+              <td>{{ row.statement or 0 }}</td>
+              <td>{{ row.sick or 0 }}</td>
+              <td>{{ row.competition or 0 }}</td>
+              <td>{{ row.other or 0 }}</td>
+              <td class="col-danger">{{ row.unexcused or 0 }}</td>
+              <td>{{ '%.1f'|format(row.pct) }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="tr-summary">
+              <td colspan="8" style="text-align:right;">Ср. % по группе:</td>
+              <td>{{ '%.2f'|format(detail.group_pct) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card-box" style="padding:0; overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border-color); font-weight:700; background:#f9fafb;">
+      Журнал за {{ day.isoformat() }} (Просмотр)
+    </div>
+
+    {% if students|length == 0 %}
+      <div style="padding:30px; text-align:center; color:var(--text-secondary);">Нет студентов</div>
+    {% else %}
+      <div class="table-responsive" style="border:none; border-radius:0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Студент</th>
+              <th>Отметки пар</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+              {% set recs = day_map.get(s.id, []) %}
+              <tr>
+                <td style="text-align:left;">{{ s.full_name }}</td>
+                <td style="text-align:left; white-space:normal;">
+                  {% if recs|length == 0 %}
+                    <span style="color:#9ca3af">—</span>
+                  {% else %}
+                    {% for r in recs %}
+                      {% set status_cls = r.status if r.status in ['present','late','absent','excused'] else 'empty' %}
+                      <span class="badge {{ status_cls }}">
+                        {{ r.period_code|upper }}
+                        {% if r.status == 'excused' and r.reason %}
+                          <span class="reason">({{ r.reason }})</span>
+                        {% endif %}
+                      </span>
+                    {% endfor %}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% if skips|length %}
+  <div class="card-box" style="margin-top:24px;">
+    <div class="card-title">Снятые пары ({{ day.isoformat() }})</div>
+    <div style="display:flex; gap:8px;">
+      {% for r in skips %}
+        <span style="padding:4px 10px; background:#f3f4f6; border-radius:6px; color:#6b7280; font-weight:600; font-size:13px;">
+          {{ r.period_code|upper }}
+        </span>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+<script>
+  // Инициализация диаграммы
+  (function () {
+    const canvas = document.getElementById('chart1');
+    if (!canvas) return;
+
+    const raw = canvas.getAttribute('data-chart') || '{}';
+    let data;
+    try { data = JSON.parse(raw); } catch (e) { data = {}; }
+
+    if (window.Chart && data && data.datasets) {
+      new Chart(canvas, {
+        type: 'doughnut',
+        data: data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false, // Чтобы не растягивалась бесконечно
+          cutout: '65%', // Бублик потоньше
+          plugins: {
+            legend: { 
+              position: 'bottom',
+              labels: { usePointStyle: true, font: { family: 'Inter', size: 12 } }
+            }
+          }
+        }
+      });
+    }
+  })();
+</script>
+
+{% endblock %}
