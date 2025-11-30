@@ -4,7 +4,7 @@ from datetime import date, time as dtime, datetime
 
 from sqlalchemy import (
     create_engine, Column, Integer, String, Date, Time, DateTime, Text, ForeignKey,
-    UniqueConstraint, Index, Boolean
+    UniqueConstraint, Index
 )
 from sqlalchemy.orm import (
     DeclarativeBase, Mapped, mapped_column, relationship,
@@ -172,30 +172,6 @@ class User(Base):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# ЧАТ С ТЕХПОДДЕРЖКОЙ [НОВОЕ]
-# ──────────────────────────────────────────────────────────────────────────────
-class ChatMessage(Base):
-    __tablename__ = "chat_messages"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    sender_fio: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
-    recipient_fio: Mapped[str] = mapped_column(String(255), index=True, nullable=False) 
-    message: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "sender": self.sender_fio,
-            "recipient": self.recipient_fio,
-            "message": self.message,
-            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M"),
-            "is_read": self.is_read
-        }
-
-
-# ──────────────────────────────────────────────────────────────────────────────
 # ИНИЦИАЛИЗАЦИЯ/СЕССИИ
 # ──────────────────────────────────────────────────────────────────────────────
 engine = create_engine(DB_URL, echo=False, future=True)
@@ -207,6 +183,9 @@ SessionLocal = scoped_session(
 def init_db() -> None:
     """
     Создаёт схемы и необходимые индексы.
+
+    ВАЖНО: перед create_all мы дропаем таблицу period_skips,
+    чтобы обновилось уникальное ограничение (date, period_code, group_code).
     """
     if DB_URL.startswith("sqlite"):
         with engine.connect() as conn:
